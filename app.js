@@ -8,14 +8,12 @@ const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 const supabase = createClient(API_URL, PUBLIC_ANON_KEY);
 //-------------------------------------------------------------------
 
-const { createBot, createProvider, createFlow, addKeyword } = require('@bot-whatsapp/bot')
-
+const { createBot, createProvider, createFlow, addKeyword, addAnswer } = require('@bot-whatsapp/bot')
 const QRPortalWeb = require('@bot-whatsapp/portal')
 const BaileysProvider = require('@bot-whatsapp/provider/baileys')
 const MockAdapter = require('@bot-whatsapp/database/mock')
 
-//FUNCIONES SUPABASE-------------------------------------------------------------------
-
+//FUNCIONES DEBUG-------------------------------------------------------------------
 const getTestData = async () => {
     try {
         const { data, error } = await supabase
@@ -43,65 +41,76 @@ const insertTestData = async (mensaje) => {
     }
   };
 
+
+//-----------------------------------------------------------------------------------
 //FUNCIONES SUPABASE-------------------------------------------------------------------
 
-const flowSecundario = addKeyword(['2', 'siguiente']).addAnswer(['📄 Aquí tenemos el flujo secundario'])
+const verifyUser = async (user) => {
+    try {
+        const { data, error } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('telefono', user)
+        if (error) throw error
+        console.log('data', data)
+        return data
+    }
+    catch (error) {
+        console.error('error', error)
+    }
+}
 
-const flowDocs = addKeyword(['doc', 'documentacion', 'documentación']).addAnswer(
-    [
-        '📄 Aquí encontras las documentación recuerda que puedes mejorarla',
-        'https://bot-whatsapp.netlify.app/',
-        '\n*2* Para siguiente paso.',
-    ],
-    null,
-    null,
-    [flowSecundario]
-)
+const verifyTicket = async (ticket) => {
+    try {
+        const { data, error } = await supabase
+            .from('tickets')
+            .select('*')
+            .eq('folio', ticket)
+        if (error) throw error
+        console.log('data', data)
+        return data
+    }
+    catch (error) {
+        console.error('error', error)
+    }
+}
 
-const flowTuto = addKeyword(['tutorial', 'tuto']).addAnswer(
-    [
-        '🙌 Aquí encontras un ejemplo rapido',
-        'https://bot-whatsapp.netlify.app/docs/example/',
-        '\n*2* Para siguiente paso.',
-    ],
-    null,
-    null,
-    [flowSecundario]
-)
+//FUNCIONES SUPABASE-------------------------------------------------------------------
 
-const flowGracias = addKeyword(['gracias', 'grac']).addAnswer(
-    [
-        '🚀 Puedes aportar tu granito de arena a este proyecto',
-        '[*opencollective*] https://opencollective.com/bot-whatsapp',
-        '[*buymeacoffee*] https://www.buymeacoffee.com/leifermendez',
-        '[*patreon*] https://www.patreon.com/leifermendez',
-        '\n*2* Para siguiente paso.',
-    ],
-    null,
-    null,
-    [flowSecundario]
-)
+const flowprueba = addAnswer('Hola')
 
-const flowDiscord = addKeyword(['discord']).addAnswer(
-    ['🤪 Únete al discord', 'https://link.codigoencasa.com/DISCORD', '\n*2* Para siguiente paso.'],
-    null,
-    null,
-    [flowSecundario]
-)
+const flowPrincipal = addKeyword(['hola', 'ole', 'alo',"."])
+    .addAnswer('🙌 Hola bienvenido a *Kigo | Parkimovil*')
+    .addAnswer('Ingresa el folio de tu boleto 🎫:', {capture: true}, async (ctx, {gotoFlow}) => {
+        console.log('ctx', ctx) 
+        let userToLookUp = ctx.from
+        let ticket = ctx.body 
 
-const flowPrincipal = addKeyword(['hola', 'ole', 'alo'])
-    .addAnswer('🙌 Hola bienvenido a este *Chatbot*')
-    .addAnswer(
-        [
-            'te comparto los siguientes links de interes sobre el proyecto',
-            '👉 *doc* para ver la documentación',
-            '👉 *gracias*  para ver la lista de videos',
-            '👉 *discord* unirte al discord',
-        ],
-        null,
-        null,
-        [flowDocs, flowGracias, flowTuto, flowDiscord]
-    )
+        verifyUser(userToLookUp).then((data) => {
+            if(data.length > 0){
+                console.log('Usuario encontrado')
+
+                verifyTicket(ticket).then((data) => {
+                    if(data.length > 0){
+                        console.log('Ticket encontrado')
+                    }else{
+                        console.log('Ticket no encontrado')
+                    }
+                })
+
+            }
+            else{
+                console.log('Usuario no encontrado')
+                return flowprueba
+                
+            }
+        })
+
+
+    })
+
+
+
 
 const main = async () => {
     const adapterDB = new MockAdapter()
@@ -115,6 +124,7 @@ const main = async () => {
     })
 
     QRPortalWeb()
+    
 
 }
 
