@@ -76,12 +76,11 @@ const verifyTicket = async (ticket) => {
 }
 
 //FUNCIONES SUPABASE-------------------------------------------------------------------
-
-const flowprueba = addAnswer('Hola')
+const flowPrueba = addKeyword(['prueba']).addAnswer('🚫 No tienes cuenta con Kigo, descarga la app. https://parkimovil.com/app?qr=EZZZ')
 
 const flowPrincipal = addKeyword(['hola', 'ole', 'alo',"."])
     .addAnswer('🙌 Hola bienvenido a *Kigo | Parkimovil*')
-    .addAnswer('Ingresa el folio de tu boleto 🎫:', {capture: true}, async (ctx, {gotoFlow}) => {
+    .addAnswer(['Ingresa el folio de tu boleto 🎫:'], {capture: true}, async (ctx, {gotoFlow}) => { 
         console.log('ctx', ctx) 
         let userToLookUp = ctx.from
         let ticket = ctx.body 
@@ -101,13 +100,10 @@ const flowPrincipal = addKeyword(['hola', 'ole', 'alo',"."])
             }
             else{
                 console.log('Usuario no encontrado')
-                return flowprueba
-                
+                gotoFlow(flowPrueba) // eslint-disable-line
             }
         })
-
-
-    })
+    } , [])
 
 
 
